@@ -156,7 +156,9 @@ app.post("/login", (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).send("All fields are required");
+        return res.status(400).send("All fields are required"); //Optional as body-parser will handle this by default
+        // How body-parser works is that if a field is missing, it simply won't be present in req.body.
+        // Input field is also required in the frontend that is why it is optional here
     }
 
     User.findOne({ email: email })
@@ -204,7 +206,17 @@ app.listen(PORT, (err) => {
 
 // Authentication Steps
 // Check for empty input
-// 
-// 
-// 
-// 
+// Validate strong password
+// Check if user already exists
+// Hash password
+// Save new user
+
+// Login Steps
+// Check for empty input
+// Find user by email
+// Compare password
+// Grant or deny access
+
+// AUTHENTICATION - To check if a user is authentic, To confirm if a user exists. 
+// AUTHORIZATION - Gives the user access and privileges to protected resources
+// - To check if an authentic user has the right to access certain resources.
