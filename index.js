@@ -7,6 +7,11 @@ const PORT = process.env.PORT || 5000
 const mongoose = require("mongoose")
 const MongoDB_URI = process.env.MongoDB_URI
 app.set("view engine", "ejs")
+const bcrypt = require("bcryptjs");
+const saltRounds = 10;
+
+
+
 
 
 
@@ -58,10 +63,10 @@ let userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, "Password is required"],
-        match: [
-            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-            "Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character",
-        ],
+        // match: [
+        //     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+        //     "Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character",
+        // ],
     },
 })
 let User = mongoose.model("User", userSchema)
@@ -95,26 +100,93 @@ app.get("/emini", (req, res) => {
 app.get("/signup", (req, res) => {
     res.render("signup")
 })
-
 app.post("/register", (req, res) => {
     const { firstName, lastName, email, password } = req.body;
-    console.log(req.body)
-    let newUser = new User(req.body);
-    newUser.save()
-        .then(() => {
+    console.log(req.body);
+
+    // Step 1 is to Validate strong password
+    const strongPasswordRegex =
+        /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPasswordRegex.test(password)) {
+        return res.status(400).send(
+            "Weak password: must include uppercase, lowercase, number, and special character."
+        );
+    }
+
+    // Step 2 is to Check if user already exists to prevent more than one registrations
+    User.findOne({ email })
+        .then((existingUser) => {
+            if (existingUser) {
+                res.status(400).send("Email already exists!");
+                return Promise.reject("User already exists"); // Stop the chain - completion of  an async operation
+            }
+
+            // Step 3 is to Hash password
+            return bcrypt.hash(password, saltRounds);
+        })
+        .then((hashedPassword) => {
+            if (!hashedPassword) return; // If user exists, skip this step, it is optional
+            // Step 4 is to Save new user
+            const newUser = new User({
+                firstName,
+                lastName,
+                email,
+                password: hashedPassword, // Store hashed password not the plain text password
+            });
+
+            return newUser.save();
+        })
+        .then((savedUser) => {
+            if (!savedUser) return; // If user exists, skip this step, it is also optional
             console.log("User registered successfully");
-            // res.send("User registered successfully");
             res.redirect("/signin");
         })
         .catch((err) => {
-            console.error("Error saving user:", err);
-            res.status(500).send("Internal Server Error");
+            if (err !== "User already exists") {
+                console.error("Error saving user:", err);
+                res.status(500).send("Internal Server Error");
+            }
         });
-})
+});
 
 app.get("/signin", (req, res) => {
     res.render("signin")
 })
+
+app.post("/login", (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).send("All fields are required");
+    }
+
+    User.findOne({ email: email })
+        .then((user) => {
+            if (!user) {
+                console.log("User not found");
+                return res.status(400).send("Invalid email or password");
+            }
+
+            bcrypt.compare(password, user.password)
+                .then((isMatch) => {
+                    if (isMatch) {
+                        console.log("Login successful");
+                        res.redirect("/dashboard");
+                    } else {
+                        console.log("Invalid password");
+                        res.status(400).send("Invalid email or password");
+                    }
+                })
+                .catch((err) => {
+                    console.error("Error comparing password:", err);
+                    res.status(500).send("Internal Server Error");
+                });
+        })
+        .catch((err) => {
+            console.error("Error finding user:", err);
+            res.status(500).send("Internal Server Error");
+        });
+});
 app.get("/dashboard", (req, res) => {
     res.render("dashboard", { gender: "Female" })
 })
