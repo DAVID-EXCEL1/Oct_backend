@@ -104,12 +104,12 @@ app.post("/register", (req, res) => {
     const { firstName, lastName, email, password } = req.body;
     console.log(req.body);
 
-    // Step 1 is to Validate strong password
+    // Step 1 is to Validate strong password  // Regex isMatch
     const strongPasswordRegex =
         /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!strongPasswordRegex.test(password)) {
         return res.status(400).send(
-            "Weak password: must include uppercase, lowercase, number, and special character."
+            "Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character"
         );
     }
 
@@ -120,7 +120,6 @@ app.post("/register", (req, res) => {
                 res.status(400).send("Email already exists!");
                 return Promise.reject("User already exists"); // Stop the chain - completion of  an async operation
             }
-
             // Step 3 is to Hash password
             return bcrypt.hash(password, saltRounds);
         })
