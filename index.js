@@ -7,8 +7,8 @@ const PORT = process.env.PORT || 5000
 const mongoose = require("mongoose")
 const MongoDB_URI = process.env.MongoDB_URI
 app.set("view engine", "ejs")
-const bcrypt = require("bcryptjs");
-const saltRounds = 10;
+const userRoutes = require("./routes/user.routes")
+
 
 
 
@@ -24,6 +24,7 @@ const saltRounds = 10;
 // It takes that raw incoming request data and converts it into a usable JavaScript object, so you can easily access it in your code.
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use("/user", userRoutes)
 // Connect to MongoDB
 mongoose.connect(MongoDB_URI)
     .then(() => {
@@ -34,42 +35,6 @@ mongoose.connect(MongoDB_URI)
     });
 
 // Schema and Model definition can go here
-let userSchema = new mongoose.Schema({
-    firstName: {
-        type: String,
-        required: [true, "First name is required"],
-        match: [/^[A-Za-z]+$/, "First name must contain only letters"],
-        trim: true,
-    },
-
-    lastName: {
-        type: String,
-        required: [true, "Last name is required"],
-        match: [/^[A-Za-z]+$/, "Last name must contain only letters"],
-        trim: true,
-    },
-
-    email: {
-        type: String,
-        required: [true, "Email is required"],
-        unique: [true, "Email has been taken, please choose another one"],
-        match: [
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            "Please provide a valid email address",
-        ],
-        lowercase: true,
-    },
-
-    password: {
-        type: String,
-        required: [true, "Password is required"],
-        // match: [
-        //     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-        //     "Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character",
-        // ],
-    },
-})
-let User = mongoose.model("User", userSchema)
 
 
 
@@ -88,113 +53,6 @@ let User = mongoose.model("User", userSchema)
 // ]
 
 
-app.get("/", (req, res) => {
-    res.send("Nibo we don welcome you yesterday")
-})
-
-app.get("/emini", (req, res) => {
-    // console.log(__dirname)
-    res.sendFile(__dirname + "/index.html")
-})
-
-app.get("/signup", (req, res) => {
-    res.render("signup")
-})
-app.post("/register", (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
-    console.log(req.body);
-
-    // Step 1 is to Validate strong password  // Regex isMatch
-    const strongPasswordRegex =
-        /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!strongPasswordRegex.test(password)) {
-        return res.status(400).send(
-            "Password must be at least 8 characters long, contain uppercase, lowercase, a number, and a special character"
-        );
-    }
-
-    // Step 2 is to Check if user already exists to prevent more than one registrations
-    User.findOne({ email })
-        .then((existingUser) => {
-            if (existingUser) {
-                res.status(400).send("Email already exists!");
-                return Promise.reject("User already exists"); // Stop the chain - completion of  an async operation
-            }
-            // Step 3 is to Hash password
-            return bcrypt.hash(password, saltRounds);
-        })
-        .then((hashedPassword) => {
-            if (!hashedPassword) return; // If user exists, skip this step, it is optional
-            // Step 4 is to Save new user
-            const newUser = new User({
-                firstName,
-                lastName,
-                email,
-                password: hashedPassword, // Store hashed password not the plain text password
-            });
-
-            return newUser.save();
-        })
-        .then((savedUser) => {
-            if (!savedUser) return; // If user exists, skip this step, it is also optional
-            console.log("User registered successfully");
-            res.redirect("/signin");
-        })
-        .catch((err) => {
-            if (err !== "User already exists") {
-                console.error("Error saving user:", err);
-                res.status(500).send("Internal Server Error");
-            }
-        });
-});
-
-app.get("/signin", (req, res) => {
-    res.render("signin")
-})
-
-app.post("/login", (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).send("All fields are required"); //Optional as body-parser will handle this by default
-        // How body-parser works is that if a field is missing, it simply won't be present in req.body.
-        // Input field is also required in the frontend that is why it is optional here
-    }
-
-    User.findOne({ email: email })
-        .then((user) => {
-            if (!user) {
-                console.log("User not found");
-                return res.status(400).send("Invalid email or password");
-            }
-
-            bcrypt.compare(password, user.password)
-                .then((isMatch) => {
-                    if (isMatch) {
-                        console.log("Login successful");
-                        res.redirect("/dashboard");
-                    } else {
-                        console.log("Invalid password");
-                        res.status(400).send("Invalid email or password");
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error comparing password:", err);
-                    res.status(500).send("Internal Server Error");
-                });
-        })
-        .catch((err) => {
-            console.error("Error finding user:", err);
-            res.status(500).send("Internal Server Error");
-        });
-});
-app.get("/dashboard", (req, res) => {
-    res.render("dashboard", { gender: "Female" })
-})
-
-app.get("/students", (req, res) => {
-    res.send(allStudents)
-})
 app.listen(PORT, (err) => {
     if (err) {
         console.log("Error occurred while starting the server:", err);
