@@ -10,11 +10,6 @@ app.set("view engine", "ejs")
 const userRoutes = require("./routes/user.routes")
 
 
-
-
-
-
-
 // MVCR Architechture
 
 // Set your bodyparser
@@ -38,19 +33,6 @@ mongoose.connect(MongoDB_URI)
 
 
 
-// let allStudents = [
-//     { id: 1, name: "Felix", age: 60, accountBalance: 500000, course: "Software Engineer" },
-//     { id: 2, name: "Emini", age: 20, accountBalance: 200000, course: "Data Science" },
-//     { id: 3, name: "Tobi", age: 25, accountBalance: 300000, course: "Cyber Security" },
-//     { id: 4, name: "Bola", age: 30, accountBalance: 400000, course: "UI/UX Design" },
-//     { id: 5, name: "Seyi", age: 35, accountBalance: 600000, course: "Digital Marketing" },
-//     { id: 6, name: "Tunde", age: 40, accountBalance: 700000, course: "Product Management" },
-//     { id: 7, name: "Ayo", age: 45, accountBalance: 800000, course: "Business Analysis" },
-//     { id: 8, name: "Kunle", age: 50, accountBalance: 900000, course: "Project Management" },
-//     { id: 9, name: "Chidi", age: 55, accountBalance: 1000000, course: "Cloud Computing" },
-//     { id: 10, name: "Ngozi", age: 28, accountBalance: 450000, course: "DevOps" },
-//     { id: 11, name: "Emeka", age: 32, accountBalance: 550000, course: "AI and Machine Learning" },
-// ]
 
 
 app.listen(PORT, (err) => {
