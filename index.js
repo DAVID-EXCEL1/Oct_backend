@@ -8,9 +8,15 @@ const mongoose = require("mongoose")
 const MongoDB_URI = process.env.MongoDB_URI
 app.set("view engine", "ejs")
 const userRoutes = require("./routes/user.routes")
-
+const cors = require("cors")
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true
+})); // or 5173 if using Vite
 
 // MVCR Architechture
+// Models, Views, Controllers and Routes
 
 // Set your bodyparser
 // In Node.js, when someone sends data to your server (for example, filling a form and clicking submit), that data doesn’t automatically come as a nice object. Instead, it usually comes in a raw format like a string or buffer.

@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const saltRounds = 10;
 const nodemailer = require("nodemailer");
 const User = require("../models/user.models")
+const jwt = require("jsonwebtoken");
 
 
 const getNew = (req, res) => {
@@ -59,16 +60,16 @@ const postRegister = (req, res) => {
             let transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
-                    user: 'davidsome2004@gmail.com',
+                    user: process.env.EMAIL_USER,
                     // a special password generated from google account settings not your original password
                     // Step one: Enable 2-step verification
                     // Step two: Generate router password
-                    pass: 'xfmtxcpaixvepeiq'
+                    pass: process.env.EMAIL_PASS
                 }
             });
             // This is the information about the email you are sending
             let mailOptions = {
-                from: 'davidsome2004@gmail.com',
+                from: process.env.EMAIL_USER,
                 to: [req.body.email], // list of receivers
                 subject: 'Welcome to Our routerlication',
                 // Welcome@David2
@@ -97,7 +98,7 @@ const postRegister = (req, res) => {
                     console.log('Email sent: ' + info.response);
                 }
             });
-            res.redirect("/user/signin");
+            res.status(201).json({ success: true, message: "User registered!" });
         })
         .catch((err) => {
             if (err !== "User already exists") {
@@ -132,7 +133,26 @@ const postLogin = (req, res) => {
                 .then((isMatch) => {
                     if (isMatch) {
                         console.log("Login successful");
-                        res.redirect("/user/dashboard");
+                        // Generate JWT token with user info
+                        const token = jwt.sign(
+                            { 
+                                email: user.email,
+                                userId: user._id 
+                            }, 
+                            process.env.JWT_SECRET, 
+                            { expiresIn: "1h" }
+                        );
+                        console.log("Generated JWT:", token);
+                        res.status(200).json({ 
+                            success: true, 
+                            message: "User logged in!", 
+                            token: token,
+                            user: {
+                                email: user.email,
+                                firstName: user.firstName,
+                                lastName: user.lastName
+                            }
+                        });
                     } else {
                         console.log("Invalid password");
                         res.status(400).send("Invalid email or password");
@@ -168,7 +188,12 @@ const getAllStudents = (req, res) => {
 }
 
 const getDashboard = (req, res) => {
-    res.render("dashboard", { gender: "Female" })
+    // Access authenticated user info from req.user (added by verifyToken middleware)
+    res.render("dashboard", { 
+        gender: "Female",
+        userEmail: req.user.email,
+        userId: req.user.userId
+    })
 }
 module.exports = {
     getNew,

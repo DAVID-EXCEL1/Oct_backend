@@ -1,6 +1,7 @@
 const express = require("express")
 const router = express.Router()
 const { getNew, getDash , getSignup, getSignin, getAllStudents, getDashboard, postRegister, postLogin} = require("../controllers/user.controllers")
+const { verifyToken } = require("../middleware/auth.middleware")
 
 
 router.get("/", getDash)
@@ -14,9 +15,11 @@ router.post("/register", postRegister);
 router.get("/signin", getSignin)
 
 router.post("/login", postLogin);
-router.get("/dashboard", getDashboard)
 
-router.get("/students", getAllStudents)
+// Protected routes - require JWT token
+router.get("/dashboard", verifyToken, getDashboard)
+
+router.get("/students", verifyToken, getAllStudents)
 
 
 module.exports = router;
