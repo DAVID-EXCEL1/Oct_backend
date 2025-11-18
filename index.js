@@ -10,7 +10,7 @@ app.set("view engine", "ejs")
 const userRoutes = require("./routes/user.routes")
 const cors = require("cors")
 app.use(cors({
-    origin: 'https://october-frontend-jade.vercel.app/', 
+    origin: 'https://october-frontend-jade.vercel.app', 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true
 })); // or 5173 if using Vite
